@@ -1,0 +1,11 @@
+#hexdump -v -C MSGLISTS_0_initial.MSF >000.txt
+#hexdump -v -C MSGLISTS_1_14s_in_A.MSF >001.txt
+#hexdump -v -C MSGLISTS_2_secondInA.MSF >002.txt
+#hexdump -v -C MSGLISTS_3_thirdInB.MSF >003.txt
+#hexdump -v -C MSGLISTS_4_withMixedA.MSF >004.txt
+#hexdump -v -C MSGLISTS_5_ARepeats.MSF >005.txt
+#hexdump -v -C MSGLISTS_6_Dates.MSF >006.txt
+#hexdump -v -C MSGLISTS_7_Dates.MSF >007.txt
+#hexdump -v -C MSGLISTS_8_Locked.MSF >008.txt
+#hexdump -v -C MSGLISTS_9_Locked.MSF >009.txt
+hexdump -v -C MSGLISTS_A_Locked.MSF >00A.txt

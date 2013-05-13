@@ -3,12 +3,16 @@
 
    Scott Lawrence 2013
 */
+#include <iostream>
+#include <string>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define kMsgFilename "/VOICE/MSGLISTS.MSF"
+
+
+#define kMsgFilename "MSGLISTS.MSF"
 
 #define kFileHeaderSz (0x0020)
 
@@ -65,7 +69,7 @@ typedef struct sFldItm {
 
 
 
-int Scan( char * fn )
+int Scan( std::string fn )
 {
 	FILE * fp = NULL;
 	size_t bufsize = 0;
@@ -75,10 +79,10 @@ int Scan( char * fn )
 	int fld;
 
 	/* attempt to open the file */
-	fp = fopen( fn, "r" );
+	fp = fopen( fn.c_str(), "r" );
 
 	if( !fp ) {
-		fprintf( stderr, "Unable to open file: %s", fn );
+		std::cerr << "Unable to open file: " << fn << std::endl;
 		return -1;
 	}
 
@@ -117,10 +121,7 @@ int Scan( char * fn )
 		char * folderName;
 
 		/* compute the start offset */
-		folderOffset = kFileHeaderSz + 
-			(fld * (kFolderHeaderSz 
-			 	+ (kFolderItemSz * kFolderNItems )
-			        + kFolderPadSz ));
+		folderOffset = kFileHeaderSz + (fld * kFolderSize );
 
 		folderNameOffset = folderOffset + 4;
 		folderName = (char * ) (buf + folderNameOffset);
@@ -153,16 +154,6 @@ int Scan( char * fn )
 	return 0;
 }
 
-char * getVRFromEnv( void )
-{
-	char * v = getenv( "VOICERECORDER" );
-	if( v != NULL ) {
-		printf( "Found VoiceRecorder path at %s\n", v );
-	} else {
-		printf( "VoiceRecorder envvar not set!\n" );
-	}
-	return v;
-}
 
 void usage( char * av0 )
 {
@@ -179,24 +170,22 @@ int main( int argc, char ** argv )
 	char * pth;
 	char * msfPath;
 
-	pth = getVRFromEnv();
+	pth = getenv( "VOICERECORDER" );
 	if( !pth ) {
 		usage( argv[0] );
 		return -1;
 	}
 
-	/* allocate space for the full path of the thing. */
-	msfPath = (char *) malloc( sizeof( char ) * (strlen( pth ) 
-					      +  strlen( kMsgFilename )
-					      +  2 ));
-	/* build up the MSF Path */
-	strcpy( msfPath, pth );
-	while( msfPath[ strlen( msfPath )-1] == '/' ) {
-		msfPath[ strlen( msfPath )-1 ] = '\0';
-	}
-	strcat( msfPath, kMsgFilename );
+	std::string vrDir( pth );
+	std::string vrVoiceDir( pth );
+	vrVoiceDir += "/VOICE/";
 
-	printf( "Using %s\n", msfPath );
+	std::string vrMSFFile( vrVoiceDir );
+	vrMSFFile += kMsgFilename;
 
-	return Scan( msfPath );
+	std::cout << "Voice Recorder at " << vrDir << std::endl;
+	std::cout << "     Voice Dir is " << vrVoiceDir << std::endl;
+	std::cout << "      MSF File is " << vrMSFFile << std::endl;
+
+	return Scan( vrMSFFile );
 }

@@ -12,12 +12,13 @@ OBJS := $(SRCS:%.cpp=%.o)
 all: $(TARG)
 
 %.o: %.cpp
-	@echo $(CC) $<
-	@$(CC) $(CFLAGS) $(DEFS) $(INCS) -c -o $@ $<
+	@echo ===============
+	@echo $(CXX) $<
+	@$(CXX) $(CFLAGS) $(DEFS) $(INCS) -c -o $@ $<
 
-msfdump: $(OBJS)
+$(TARG): $(OBJS)
 	@echo Link $@
-	@$(CC) $(CFLAGS) $^ $(LDFLAGS) $(LIBS) -o $@
+	@$(CXX) $(CFLAGS) $^ $(LDFLAGS) $(LIBS) -o $@
 
 clean:
 	@echo Remove build files

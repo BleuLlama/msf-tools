@@ -11,8 +11,8 @@
 #include <string.h>
 
 
+class VoiceFile {
 
-#define kMsgFilename "MSGLISTS.MSF"
 
 #define kFileHeaderSz (0x0020)
 
@@ -67,9 +67,52 @@ typedef struct sFldItm {
 } sFldItm;
 
 
+private:
+	std::string vrDir;
+	std::string vrVoiceDir;
+	std::string vrMSFFile;
+
+public:
+	VoiceFile( std::string _path );
+	~VoiceFile( void );
+
+public:
+	void ConfigurePath( std::string _path );
+
+	int Scan( void );
+};
+////////////////////////////////////////////////////////////////////////////////
+
+VoiceFile::VoiceFile( std::string _path )
+	: vrDir( "." )
+	, vrVoiceDir( "." )
+	, vrMSFFile( "x" )
+{
+	this->ConfigurePath( _path );
+}
+
+VoiceFile::~VoiceFile( void )
+{
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 
-int Scan( std::string fn )
+void VoiceFile::ConfigurePath( std::string _path )
+{
+	this->vrDir.assign( _path );
+	this->vrVoiceDir.assign( _path );
+	vrVoiceDir += "/VOICE/";
+
+	vrMSFFile.assign( vrVoiceDir );
+	vrMSFFile += "MSGLISTS.MSF";
+
+	std::cout << "Voice Recorder at " << vrDir << std::endl;
+	std::cout << "     Voice Dir is " << vrVoiceDir << std::endl;
+	std::cout << "      MSF File is " << vrMSFFile << std::endl;
+}
+
+int VoiceFile::Scan( void )
 {
 	FILE * fp = NULL;
 	size_t bufsize = 0;
@@ -79,10 +122,10 @@ int Scan( std::string fn )
 	int fld;
 
 	/* attempt to open the file */
-	fp = fopen( fn.c_str(), "r" );
+	fp = fopen( this->vrMSFFile.c_str(), "r" );
 
 	if( !fp ) {
-		std::cerr << "Unable to open file: " << fn << std::endl;
+		std::cerr << "Unable to open file: " << vrMSFFile << std::endl;
 		return -1;
 	}
 
@@ -176,16 +219,6 @@ int main( int argc, char ** argv )
 		return -1;
 	}
 
-	std::string vrDir( pth );
-	std::string vrVoiceDir( pth );
-	vrVoiceDir += "/VOICE/";
-
-	std::string vrMSFFile( vrVoiceDir );
-	vrMSFFile += kMsgFilename;
-
-	std::cout << "Voice Recorder at " << vrDir << std::endl;
-	std::cout << "     Voice Dir is " << vrVoiceDir << std::endl;
-	std::cout << "      MSF File is " << vrMSFFile << std::endl;
-
-	return Scan( vrMSFFile );
+	VoiceFile vf( pth );
+	return vf.Scan();
 }

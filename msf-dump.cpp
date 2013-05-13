@@ -32,7 +32,7 @@ same file, resaved:
 	*/
 } sMSF_Header;
 
-#define kNumFolders (6)
+#define kNumFolders (5)
 #define kFolderHeaderSz	( 0x0040 )
 #define kFolderItemSz	( 0x0020 )
 #define kFolderNItems	( 99 )
@@ -133,7 +133,12 @@ int VoiceFile::Scan( void )
 	fseek( fp, 0, SEEK_END );
 	bufsize = ftell( fp );
 	fseek( fp, 0, SEEK_SET );
-	printf( "File is %ld bytes\n", bufsize );
+	//printf( "File is %ld bytes\n", bufsize );
+	if( bufsize != 16384 ) {
+		std::cerr << "File is the wrong size." << std::endl;
+		std::cerr << "Bad things might happen" << std::endl;
+		std::cerr << std::endl;
+	}
 
 	buf = (unsigned char *) malloc( sizeof( unsigned char ) * bufsize );
 
@@ -169,7 +174,13 @@ int VoiceFile::Scan( void )
 		folderNameOffset = folderOffset + 4;
 		folderName = (char * ) (buf + folderNameOffset);
 
-		printf( "Folder %s:  (0x%04x)\n", folderName, folderOffset );
+		std::string folderPath( this->vrVoiceDir );
+		folderPath.append( folderName );
+		folderPath.append( "/" );
+
+		printf( "\nFolder %s: 0x%04x %s\n",
+				folderName,
+				folderOffset, folderPath.c_str() );
 
 		for( fitem = 0 ; fitem < 100 ; fitem++ )
 		{
@@ -203,9 +214,10 @@ void usage( char * av0 )
 	printf( "Usage:  %s\n", av0 );
 	printf( "\n" );
 	printf( "note: define VOICERECORDER env var to set root path.\n" );
-	printf( "  eg: export VOICERECORDER=/Volumes/IC_RECORDER\n" );
-	printf( "  eg: export VOICERECORDER=/v/\n" );
-	printf( "  eg: export VOICERECORDER=v:\\\n" );
+	printf( "  eg:\n" );
+	printf( "      export VOICERECORDER=/Volumes/IC_RECORDER\n" );
+	printf( "      export VOICERECORDER=/v/\n" );
+	printf( "      export VOICERECORDER=v:\\\n" );
 }
 
 int main( int argc, char ** argv )
@@ -218,6 +230,8 @@ int main( int argc, char ** argv )
 		usage( argv[0] );
 		return -1;
 	}
+
+	// NOTE: on windows, put in a scan for a drive with label "IC_RECORDER"
 
 	VoiceFile vf( pth );
 	return vf.Scan();

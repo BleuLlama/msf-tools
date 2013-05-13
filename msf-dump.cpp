@@ -6,8 +6,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#define kMsgFilename "MSGLISTS.MSF"
+#define kMsgFilename "/VOICE/MSGLISTS.MSF"
 
 #define kFileHeaderSz (0x0020)
 
@@ -112,6 +113,8 @@ int Scan( char * fn )
 	{
 		int fitem;
 		int folderOffset = 0;
+		int folderNameOffset = 0;
+		char * folderName;
 
 		/* compute the start offset */
 		folderOffset = kFileHeaderSz + 
@@ -119,7 +122,10 @@ int Scan( char * fn )
 			 	+ (kFolderItemSz * kFolderNItems )
 			        + kFolderPadSz ));
 
-		printf( "Folder %c:  (0x%04x)\n", 'A' + fld, folderOffset );
+		folderNameOffset = folderOffset + 4;
+		folderName = (char * ) (buf + folderNameOffset);
+
+		printf( "Folder %s:  (0x%04x)\n", folderName, folderOffset );
 
 		for( fitem = 0 ; fitem < 100 ; fitem++ )
 		{
@@ -147,27 +153,50 @@ int Scan( char * fn )
 	return 0;
 }
 
+char * getVRFromEnv( void )
+{
+	char * v = getenv( "VOICERECORDER" );
+	if( v != NULL ) {
+		printf( "Found VoiceRecorder path at %s\n", v );
+	} else {
+		printf( "VoiceRecorder envvar not set!\n" );
+	}
+	return v;
+}
+
+void usage( char * av0 )
+{
+	printf( "Usage:  %s\n", av0 );
+	printf( "\n" );
+	printf( "note: define VOICERECORDER env var to set root path.\n" );
+	printf( "  eg: export VOICERECORDER=/Volumes/IC_RECORDER\n" );
+	printf( "  eg: export VOICERECORDER=/v/\n" );
+	printf( "  eg: export VOICERECORDER=v:\\\n" );
+}
 
 int main( int argc, char ** argv )
 {
 	char * pth;
-	if( argc != 2 ) {
-		printf( "Usage:  %s <path to folder containing .MSF file>\n", argv[0] );
-		printf( "  eg:  %s /Volumes/IC_RECORDER/VOICE\n", argv[0] );
-		printf( "  eg:  %s V:\\VOICE\n", argv[0] );
+	char * msfPath;
+
+	pth = getVRFromEnv();
+	if( !pth ) {
+		usage( argv[0] );
 		return -1;
 	}
 
-	pth = (char *) malloc( sizeof( char ) * (strlen( argv[1] ) 
+	/* allocate space for the full path of the thing. */
+	msfPath = (char *) malloc( sizeof( char ) * (strlen( pth ) 
 					      +  strlen( kMsgFilename )
 					      +  2 ));
-	strcpy( pth, argv[1] );
-	if( pth[ strlen( pth )-1] != '/' ) {
-		strcat( pth, "/" );
+	/* build up the MSF Path */
+	strcpy( msfPath, pth );
+	while( msfPath[ strlen( msfPath )-1] == '/' ) {
+		msfPath[ strlen( msfPath )-1 ] = '\0';
 	}
-	strcat( pth, kMsgFilename );
+	strcat( msfPath, kMsgFilename );
 
-	printf( "Using %s\n", pth );
+	printf( "Using %s\n", msfPath );
 
-	return Scan( pth );
+	return Scan( msfPath );
 }

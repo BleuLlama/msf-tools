@@ -4,14 +4,14 @@
 TARG := msf-dump
 
 SRCS := \
-	msf-dump.c
+	msf-dump.cpp
 
-OBJS := $(SRCS:%.c=%.o)
+OBJS := $(SRCS:%.cpp=%.o)
 
 
 all: $(TARG)
 
-%.o: %.c
+%.o: %.cpp
 	@echo $(CC) $<
 	@$(CC) $(CFLAGS) $(DEFS) $(INCS) -c -o $@ $<
 

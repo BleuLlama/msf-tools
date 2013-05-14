@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 
 class VoiceFile {
@@ -68,6 +69,7 @@ typedef struct sFldItm {
 
 
 private:
+	bool valid;
 	std::string vrDir;
 	std::string vrVoiceDir;
 	std::string vrMSFFile;
@@ -76,19 +78,26 @@ public:
 	VoiceFile( std::string _path );
 	~VoiceFile( void );
 
+	bool Valid( void ) { return valid; }
 public:
+	bool IsValidDir( std::string _path );
 	void ConfigurePath( std::string _path );
+	std::string LFNFrom83( std::string _path, std::string eightthree );
 
 	int Scan( void );
 };
 ////////////////////////////////////////////////////////////////////////////////
 
 VoiceFile::VoiceFile( std::string _path )
-	: vrDir( "." )
+	: valid( false )
+	, vrDir( "." )
 	, vrVoiceDir( "." )
 	, vrMSFFile( "x" )
 {
-	this->ConfigurePath( _path );
+	if( this->IsValidDir( _path )) {
+		valid = true;
+		this->ConfigurePath( _path );
+	}
 }
 
 VoiceFile::~VoiceFile( void )
@@ -96,6 +105,17 @@ VoiceFile::~VoiceFile( void )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+bool VoiceFile::IsValidDir( std::string _path )
+{
+	struct stat sb;
+	if (stat(_path.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
+	{
+		return true;
+	}
+	return false;
+
+}
 
 
 void VoiceFile::ConfigurePath( std::string _path )
@@ -110,6 +130,11 @@ void VoiceFile::ConfigurePath( std::string _path )
 	std::cout << "Voice Recorder at " << vrDir << std::endl;
 	std::cout << "     Voice Dir is " << vrVoiceDir << std::endl;
 	std::cout << "      MSF File is " << vrMSFFile << std::endl;
+}
+
+std::string VoiceFile::LFNFrom83( std::string _path, std::string eightthree )
+{
+	return _path + eightthree;
 }
 
 int VoiceFile::Scan( void )
@@ -201,6 +226,11 @@ int VoiceFile::Scan( void )
 				printf( "%d-%02d-%02d  %02d:%02d:%02d\n",
 					fi->Year + 1980, fi->Month, fi->Day,
 					fi->Hour, fi->Minute, fi->Second );
+
+				std::string eightthree( fn );
+				eightthree.append( ".MP3" );
+				std::string lfn = this->LFNFrom83( folderPath, eightthree );
+				printf( "       : %s\n", lfn.c_str() );
 			}
 		}
 	}
@@ -234,5 +264,9 @@ int main( int argc, char ** argv )
 	// NOTE: on windows, put in a scan for a drive with label "IC_RECORDER"
 
 	VoiceFile vf( pth );
+	if( !vf.Valid() ) {
+		std::cerr << "Directory is invalid: " << pth << std::endl;
+		return -2;
+	}
 	return vf.Scan();
 }

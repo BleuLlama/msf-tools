@@ -84,6 +84,10 @@ int VoiceFile::Scan( void )
 	readbytes = fread( buf, sizeof( char ), bufsize, fp );
 	fclose( fp );
 
+	if( readbytes == 0 ) {
+		return -3;
+	}
+
 /*
 	for( i=0 ; i < 0x20 ; i++ ) {
 		printf( "%04x %02x\n", i, buf[i] );

@@ -24,7 +24,6 @@ void usage( char * av0 )
 int main( int argc, char ** argv )
 {
 	char * pth;
-	char * msfPath;
 
 	pth = getenv( "VOICERECORDER" );
 	if( !pth ) {

@@ -96,9 +96,9 @@ std::string DiskUtils::LFNFrom83( std::string _path, std::string eightthree )
 					// check 0x100 bytes.  On MP3s, thes will be different.
 					// with these files, it should be enough.
 					for( int b=0 ; b<0x100 ; b++ ) {
-						int a = fgetc( fp_83 );
-						int b = fgetc( fp_lfn );
-						if( a != b ) diffs++;
+						int a1 = fgetc( fp_83 );
+						int a2 = fgetc( fp_lfn );
+						if( a1 != a2 ) diffs++;
 					}
 					
 					fclose( fp_83 );

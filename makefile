@@ -10,6 +10,8 @@ SRCS := \
 
 OBJS := $(SRCS:%.cpp=%.o)
 
+CFLAGS += -Wall -pedantic
+
 
 all: $(TARG)
 

@@ -20,18 +20,81 @@
 
 VoiceFile::VoiceFile( std::string _path )
 	: valid( false )
+	, buffer( NULL )
 	, vrDir( "." )
 	, vrVoiceDir( "." )
 	, vrMSFFile( "x" )
 {
 	if( DiskUtils::IsValidDir( _path )) {
-		valid = true;
 		this->ConfigurePath( _path );
+	} else {
+		return;
 	}
+
+
+	/* load in the buffer */
+	FILE * fp = NULL;
+
+	size_t bufsize = 0;
+	size_t readbytes = 0;
+
+	/* attempt to open the file */
+	fp = fopen( this->vrMSFFile.c_str(), "r" );
+
+	if( !fp ) {
+		std::cerr << "Unable to open file: " << vrMSFFile << std::endl;
+		return;
+	}
+
+	/* read it in to a buffer */
+	fseek( fp, 0, SEEK_END );
+	bufsize = ftell( fp );
+	fseek( fp, 0, SEEK_SET );
+	//printf( "File is %ld bytes\n", bufsize );
+	if( bufsize != 16384 ) {
+		std::cerr << "File is the wrong size." << std::endl;
+		std::cerr << "Bad things might happen" << std::endl;
+		std::cerr << std::endl;
+	}
+
+	this->buffer = (unsigned char *) malloc( sizeof( unsigned char ) * bufsize );
+
+	if( !this->buffer ) {
+		std::cerr << "Mem Alloc error!" << std::endl;
+		fclose( fp );
+		return;
+	}
+
+
+	readbytes = fread( this->buffer, sizeof( char ), bufsize, fp );
+	fclose( fp );
+
+	if( readbytes == 0 ) {
+		std::cerr << "Couldn't read!" << std::endl;
+		return;
+	}
+
+
+	/* 1. validate its' the right file */
+	if(   this->buffer[0] != 'M'
+	   || this->buffer[1] != 'S'
+	   || this->buffer[2] != 'G'
+	   || this->buffer[3] != 'L' ) {
+		std::cerr << "This is not a Message List file!" << std::endl;
+		return;
+	}
+
+
+	valid = true;
+	return;
 }
 
 VoiceFile::~VoiceFile( void )
 {
+	if( buffer ) {
+		free( buffer );
+		buffer = NULL;
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -53,55 +116,15 @@ void VoiceFile::ConfigurePath( std::string _path )
 
 int VoiceFile::Scan( void )
 {
-	FILE * fp = NULL;
-	size_t bufsize = 0;
-	size_t readbytes = 0;
-	unsigned char *buf;
 	int i;
 	int fld;
 
-	/* attempt to open the file */
-	fp = fopen( this->vrMSFFile.c_str(), "r" );
-
-	if( !fp ) {
-		std::cerr << "Unable to open file: " << vrMSFFile << std::endl;
-		return -1;
+	if( !this->valid ) {
+		std::cerr << "Invalid file!" << std::endl;
+		return -10;
 	}
 
-	/* read it in to a buffer */
-	fseek( fp, 0, SEEK_END );
-	bufsize = ftell( fp );
-	fseek( fp, 0, SEEK_SET );
-	//printf( "File is %ld bytes\n", bufsize );
-	if( bufsize != 16384 ) {
-		std::cerr << "File is the wrong size." << std::endl;
-		std::cerr << "Bad things might happen" << std::endl;
-		std::cerr << std::endl;
-	}
-
-	buf = (unsigned char *) malloc( sizeof( unsigned char ) * bufsize );
-
-	readbytes = fread( buf, sizeof( char ), bufsize, fp );
-	fclose( fp );
-
-	if( readbytes == 0 ) {
-		return -3;
-	}
-
-/*
-	for( i=0 ; i < 0x20 ; i++ ) {
-		printf( "%04x %02x\n", i, buf[i] );
-	}
-*/
-
-	/* 1. validate its' the right file */
-	if(   buf[0] != 'M'
-	   || buf[1] != 'S'
-	   || buf[2] != 'G'
-	   || buf[3] != 'L' ) {
-	   	fprintf( stderr, "This is not a Message List file!\n" );
-		return -2;
-	}
+	/* working on moving this into the below functions. */
 
 	/* 2. folder dumps! */
 	for( fld = 0; fld < kNumFolders ; fld++ )
@@ -115,7 +138,7 @@ int VoiceFile::Scan( void )
 		folderOffset = kFileHeaderSz + (fld * kFolderSize );
 
 		folderNameOffset = folderOffset + 4;
-		folderName = (char * ) (buf + folderNameOffset);
+		folderName = (char * ) (this->buffer + folderNameOffset);
 
 		std::string folderPath( this->vrVoiceDir );
 		folderPath.append( folderName );
@@ -129,9 +152,9 @@ int VoiceFile::Scan( void )
 		{
 			int itemIdx = folderOffset + kFolderHeaderSz
 					+ (fitem * kFolderItemSz );
-			if( buf[ itemIdx] != 0 ) {
+			if( this->buffer[ itemIdx] != 0 ) {
 				char fn[9];
-				sFldItm *fi = (sFldItm *)&buf[ itemIdx ];
+				sFldItm *fi = (sFldItm *)&this->buffer[ itemIdx ];
 
 				/* there's an item here! */
 
@@ -158,13 +181,24 @@ int VoiceFile::Scan( void )
 
 ////////////////////////////////////////////////////////////////////////////////
 
+
 std::string VoiceFile::GetFolderName( int folderIndex )
 {
 	return "FolderX";
+}
+
+std::string VoiceFile::GetPathForFolder( int folderIndex )
+{
+	return "FOO/";
 }
 
 
 std::string VoiceFile::GetFileInFolder( int fileIndex, int folderIndex )
 {
 	return "FileX";
+}
+
+std::string VoiceFile::PrintableDateForFileInFolder( int fileIndex, int folderindex )
+{
+	return "date/time";
 }

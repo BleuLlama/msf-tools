@@ -63,6 +63,7 @@ typedef struct sFldItm {
 
 private:
 	bool valid;
+	unsigned char * buffer;
 	std::string vrDir;
 	std::string vrVoiceDir;
 	std::string vrMSFFile;
@@ -81,6 +82,11 @@ public:
 public:
 	// these return empty string on fail (index out of range, etc)
 	std::string GetFolderName( int folderIndex );
+	std::string GetPathForFolder( int folderIndex );
+
 	std::string GetFileInFolder( int fileIndex, int folderIndex );
+	std::string PrintableDateForFileInFolder( int fileIndex, int folderindex );
 
 };
+
+

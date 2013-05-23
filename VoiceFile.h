@@ -5,8 +5,9 @@
 */
 #include <iostream>
 
-class VoiceFile {
 
+////////////////////////////////////////////////////////////////////////////////
+// File header  (0x20 bytes)
 
 #define kFileHeaderSz (0x0020)
 
@@ -24,7 +25,27 @@ same file, resaved:
 00000010  00 00 00 03 00 40 00 20  00 20 03 00 21 00 00 00  |.....@. . ..!...|
 					       ^^
 	*/
+
+/* possible structure:
+ 
+	4 bytes	- MSGL	- file signature
+	5 bytes	- UNK
+	1 byte  - 05     - number of folders?
+	... 
+	Possible contents:
+		- date of last save
+		- voice recorder model ID
+		- settings for the voice recorder
+		- checksum
+*/
+
+
+
 } sMSF_Header;
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Folders
 
 #define kNumFolders (5)
 #define kFolderHeaderSz	( 0x0040 )
@@ -32,6 +53,9 @@ same file, resaved:
 #define kFolderNItems	( 99 )
 #define kFolderPadSz	( 0x0020 )
 #define kFolderSize	( kFolderHeaderSz + (kFolderNItems * kFolderItemSz ) + kFolderPadSz )
+
+
+// folder header (1 per folder, 0x20 bytes)
 
 typedef struct sFldHdr {
 	unsigned char buf[ kFolderHeaderSz ];
@@ -42,6 +66,9 @@ typedef struct sFldHdr {
 		where (L) is the folder name 'A'..'F'
 	*/
 } sFldHdr;
+
+
+// folder item (99 per folder, 0x20 bytes each)
 
 typedef struct sFldItm {
 	unsigned char Pad4D;	/* 4d, 00 for unused */
@@ -60,41 +87,71 @@ typedef struct sFldItm {
 	unsigned char Pad00[2];	/* 0x00s */
 } sFldItm;
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+class VoiceFile {
 
 private:
-	bool valid;
-	unsigned char * buffer;
-	std::string vrDir;
-	std::string vrVoiceDir;
-	std::string vrMSFFile;
+	bool valid;		// is the loaded thing valid?
+	unsigned char * buffer;	// buffer of the file (it's only 16k)
+	std::string vrDir;	// directory of the voice recorder
+	std::string vrVoiceDir;	// directory of the VOICE folder
+	std::string vrMSFFile;	// path to the full MSF file
 
 public:
+	// create (including parse), destroy
 	VoiceFile( std::string _path );
 	~VoiceFile( void );
 
-	bool Valid( void ) { return valid; }
+
 public:
+	// did we load a valid path? (accessor)
+	bool Valid( void ) { return valid; }
+
+	// configure all of the path stuff, based on the voice recorder path
 	void ConfigurePath( std::string _path );
 
+public:
+	// dump the entire contents to stdout
 	int Dump( void );
 
 
 private:
+	// internal accessors to positions in the buffer
 	long GetOffsetToFolder( int folderIndex );
 	long GetOffsetToFile( int fileIndex );
 
 public:
+	// is the folder idx passed in valid?
 	bool ValidFolder( int folderIndex );
+
+	// get the number of folders
 	int GetFolderCount( void );
 
+public:
 	// these return empty string on fail (index out of range, etc)
+
+	// get the name of the specified folder
 	std::string GetFolderName( int folderIndex );
+
+	// get the path to the specified folder
 	std::string GetPathForFolder( int folderIndex );
 
+
+	// get the number of items in the folder
 	int GetFileCountForFolder( int folderIndex );
+
+	// are the passed in indexes valid?
 	bool ValidFile( int fileIndex, int FolderIndex );
+
+	// get the filename (8.3) for the specified indexes
 	std::string GetFileInFolder( int fileIndex, int folderIndex );
+
+	// get the printable version of the date for the specified indexes
 	std::string PrintableDateForFileInFolder( int fileIndex, int folderindex );
+	//
+	// get the filename-sortable version of the date for the specified indexes
 	std::string SortableDateForFileInFolder( int fileIndex, int folderindex );
 
 };

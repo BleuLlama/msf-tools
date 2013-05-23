@@ -32,19 +32,19 @@ DiskUtils::~DiskUtils( void )
 
 bool DiskUtils::IsValidDir( std::string _path )
 {
+	// stat the path to get ISDIR
 	struct stat sb;
 	if (stat(_path.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
 	{
 		return true;
 	}
 	return false;
-
 }
-
 
 
 long DiskUtils::FileSize( std::string _path )
 {
+	// stat the path to get a file size.
 	struct stat sb;
 	if (stat(_path.c_str(), &sb) == 0 )
 	{
@@ -124,12 +124,17 @@ std::string DiskUtils::LFNFrom83( std::string _path, std::string eightthree )
 	struct dirent * entry;
 	if( theDir ) {
 
+		// check each entry
 		while(( entry = readdir( theDir )) != NULL ) {
+
+			// build a full path to the file
 			std::string lfn_fullpath( _path );
 			lfn_fullpath.append( entry->d_name );
 
+			// are they similar?
 			bool isSimilar = DiskUtils::IsSimilarFile( e3_fullpath, lfn_fullpath );
 
+			// WE GOT ONE!!!
 			if( isSimilar ) {
 				foundcount++;
 				foundname.assign( entry->d_name );
@@ -150,10 +155,18 @@ std::string DiskUtils::LFNFrom83( std::string _path, std::string eightthree )
 
 
 #define kCopyFileBufSize	((4096) * 64 )
-void DiskUtils::CopyFile( std::string fromPath, std::string toPath )
+void DiskUtils::CopyFile( std::string fromPath, std::string toPath, bool skipIfExists )
 {
 	char buf[ kCopyFileBufSize ];
 
+	// if the file is already there, and it's okay to skip, we're done
+	if( skipIfExists ) {
+		if( DiskUtils::IsSimilarFile( fromPath, toPath )) return;
+	}
+	
+	// copy the file from fromPath to toPath. ;)
+
+	// open the files
 	FILE * inf = fopen( fromPath.c_str(), "rb" );
 	if( !inf ) {
 		std::cerr << "Couldn't open input file " << fromPath << std::endl;
@@ -168,12 +181,14 @@ void DiskUtils::CopyFile( std::string fromPath, std::string toPath )
 	}
 
 
+	// copy it over one buffer at a time
 	size_t n = 0;
 	do {
 		n = fread( buf, 1, kCopyFileBufSize, inf );
 		fwrite( buf, n, 1, outf );
 	} while( n!= 0 );
 
+	// close the files
 	fclose( inf );
 	fclose( outf );
 }

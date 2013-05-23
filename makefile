@@ -1,31 +1,46 @@
 # Makefile for msf-dump
 #
 
-TARG := msf-dump
+TARGA := msf-autosave
+TARGD := msf-dump
 
-SRCS := \
+SRCSCOMMON := \
 	DiskUtils.cpp \
-	VoiceFile.cpp \
+	VoiceFile.cpp
+
+SRCSD := $(SRCSCOMMON) \
 	msf-dump.cpp
 
-OBJS := $(SRCS:%.cpp=%.o)
+SRCSA := $(SRCSCOMMON) \
+	msf-autosave.cpp
+
+OBJSA := $(SRCSA:%.cpp=%.o)
+
+OBJSD := $(SRCSD:%.cpp=%.o)
+
 
 CFLAGS += -Wall -pedantic
 
 
-all: $(TARG)
+all: $(TARGA) $(TARGD)
 
 %.o: %.cpp
 	@echo $(CXX) $<
 	@$(CXX) $(CFLAGS) $(DEFS) $(INCS) -c -o $@ $<
 
-$(TARG): $(OBJS)
+$(TARGD): $(OBJSD)
 	@echo Link $@
 	@$(CXX) $(CFLAGS) $^ $(LDFLAGS) $(LIBS) -o $@
 
+$(TARGA): $(OBJSA)
+	@echo Link $@
+	@$(CXX) $(CFLAGS) $^ $(LDFLAGS) $(LIBS) -o $@
+
+
 clean:
 	@echo Remove build files
-	@-rm -f $(OBJS) $(TARG) $(TARG).exe
+	@-rm -f $(OBJSA) $(TARGA) $(TARGA).exe
+	@-rm -f $(OBJSD) $(TARGD) $(TARGD).exe
 
-test: $(TARG)
-	./$(TARG) /Volumes/IC_RECORDER/Voice/
+testd: $(TARGD)
+	./$(TARGD) /Volumes/IC_RECORDER/Voice/

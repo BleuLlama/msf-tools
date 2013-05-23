@@ -12,7 +12,7 @@
 
 void usage( char * av0 )
 {
-	std::cout << "Usage:  " << av0 << std::endl;
+	std::cout << "Usage:  " << av0 << " <LOCAL PATH TO SAVE TO>" << std::endl;
 	std::cout << std::endl;
 	std::cout << "note: define VOICERECORDER env var to set root path." << std::endl;
 	std::cout << "  eg:" << std::endl;
@@ -31,6 +31,11 @@ int main( int argc, char ** argv )
 		return -1;
 	}
 
+	if( argc != 2 ) {
+		usage( argv[0] );
+		return -3;
+	}
+
 	// NOTE: on windows, put in a scan for a drive with label "IC_RECORDER"
 
 	VoiceFile vf( pth );
@@ -38,8 +43,5 @@ int main( int argc, char ** argv )
 		std::cerr << "Directory is invalid: " << pth << std::endl;
 		return -2;
 	}
-
-	int ret = vf.Dump();
-
-	return ret;
+	return vf.Dump();
 }

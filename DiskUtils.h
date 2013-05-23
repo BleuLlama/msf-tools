@@ -34,5 +34,5 @@ public:
 	static std::string LFNFrom83( std::string _path, std::string eightthree );
 
 	// copy a file from path fromPath to path toPath
-	static void CopyFile( std::string fromPath, std::string toPath );
+	static void CopyFile( std::string fromPath, std::string toPath, bool skipIfExists = true );
 };

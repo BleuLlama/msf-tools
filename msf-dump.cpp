@@ -38,5 +38,5 @@ int main( int argc, char ** argv )
 		std::cerr << "Directory is invalid: " << pth << std::endl;
 		return -2;
 	}
-	return vf.Scan();
+	return vf.Dump();
 }

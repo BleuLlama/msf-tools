@@ -76,16 +76,26 @@ public:
 public:
 	void ConfigurePath( std::string _path );
 
-	int Scan( void );
+	int Dump( void );
 
+
+private:
+	long GetOffsetToFolder( int folderIndex );
+	long GetOffsetToFile( int fileIndex );
 
 public:
+	bool ValidFolder( int folderIndex );
+	int GetFolderCount( void );
+
 	// these return empty string on fail (index out of range, etc)
 	std::string GetFolderName( int folderIndex );
 	std::string GetPathForFolder( int folderIndex );
 
+	int GetFileCountForFolder( int folderIndex );
+	bool ValidFile( int fileIndex, int FolderIndex );
 	std::string GetFileInFolder( int fileIndex, int folderIndex );
 	std::string PrintableDateForFileInFolder( int fileIndex, int folderindex );
+	std::string SortableDateForFileInFolder( int fileIndex, int folderindex );
 
 };
 

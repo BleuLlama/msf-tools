@@ -4,6 +4,7 @@
    Scott Lawrence 2013
 */
 #include <iostream>
+#include <iomanip> /* for setw */
 #include <string>
 
 #include <stdio.h>
@@ -108,97 +109,196 @@ void VoiceFile::ConfigurePath( std::string _path )
 	vrMSFFile.assign( vrVoiceDir );
 	vrMSFFile += "MSGLISTS.MSF";
 
-	std::cout << "Voice Recorder at " << vrDir << std::endl;
-	std::cout << "     Voice Dir is " << vrVoiceDir << std::endl;
-	std::cout << "      MSF File is " << vrMSFFile << std::endl;
 }
 
 
-int VoiceFile::Scan( void )
+int VoiceFile::Dump( void )
 {
-	int i;
-	int fld;
-
 	if( !this->valid ) {
 		std::cerr << "Invalid file!" << std::endl;
 		return -10;
 	}
 
-	/* working on moving this into the below functions. */
+	/* meta dump! */
 
-	/* 2. folder dumps! */
-	for( fld = 0; fld < kNumFolders ; fld++ )
+	std::cout << "Folders:" << std::endl;
+	std::cout << "   Voice Recorder at " << vrDir << std::endl;
+	std::cout << "        Voice Dir is " << vrVoiceDir << std::endl;
+	std::cout << "         MSF File is " << vrMSFFile << std::endl;
+	std::cout << std::endl;
+
+	/* folder dumps! */
+
+	for( int f=0 ; f < this->GetFolderCount() ; f++ )
 	{
-		int fitem;
-		int folderOffset = 0;
-		int folderNameOffset = 0;
-		char * folderName;
+		std::cout << "Folder " << f << " is named \"" << this->GetFolderName( f ) << "\"" << std::endl;
+		std::cout << "   path: " << this->GetPathForFolder( f ) << std::endl;
+		std::cout << "  count: " << this->GetFileCountForFolder( f ) << std::endl;
 
-		/* compute the start offset */
-		folderOffset = kFileHeaderSz + (fld * kFolderSize );
-
-		folderNameOffset = folderOffset + 4;
-		folderName = (char * ) (this->buffer + folderNameOffset);
-
-		std::string folderPath( this->vrVoiceDir );
-		folderPath.append( folderName );
-		folderPath.append( "/" );
-
-		printf( "\nFolder %s: 0x%04x %s\n",
-				folderName,
-				folderOffset, folderPath.c_str() );
-
-		for( fitem = 0 ; fitem < 100 ; fitem++ )
+		for( int i=0 ; i < this->GetFileCountForFolder( f ) ; i++ )
 		{
-			int itemIdx = folderOffset + kFolderHeaderSz
-					+ (fitem * kFolderItemSz );
-			if( this->buffer[ itemIdx] != 0 ) {
-				char fn[9];
-				sFldItm *fi = (sFldItm *)&this->buffer[ itemIdx ];
+			std::cout << "     " << std::right << std::setw( 2 ) << i << ":" << std::endl;
 
-				/* there's an item here! */
+			std::string indent( "       " );
 
-				for( i=0 ; i<8 ; i++ ) {
-					fn[i] = fi->file[i];
-				}
-				fn[8] = '\0';
+			std::cout << indent << "  8.3: " << this->GetFileInFolder( i, f ) << std::endl;
+			std::cout << indent << " date: " << this->PrintableDateForFileInFolder( i, f ) << std::endl;
 
-				printf( "    %3d: %s.MP3  ", fitem, fn );
-				printf( "%d-%02d-%02d  %02d:%02d:%02d\n",
-					fi->Year + 1980, fi->Month, fi->Day,
-					fi->Hour, fi->Minute, fi->Second );
+			std::string lfn = DiskUtils::LFNFrom83( this->GetPathForFolder( f ), this->GetFileInFolder( i, f) );
+			std::cout << indent << "  lfn: " << lfn << std::endl;
+			std::cout << indent << "  sfn: " << this->SortableDateForFileInFolder( i, f ) << "__"
+							 << this->GetFileInFolder( i, f ) << std::endl;
 
-				std::string eightthree( fn );
-				eightthree.append( ".MP3" );
-				std::string lfn = DiskUtils::LFNFrom83( folderPath, eightthree );
-				printf( "       : %s\n", lfn.c_str() );
-			}
 		}
+
+
+		std::cout << std::endl;
+
 	}
 
 	return 0;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
+
+bool VoiceFile::ValidFolder( int folderIndex )
+{
+	if( !this->valid || folderIndex < 0 || folderIndex >= kNumFolders ) return false;
+	return true;
+}
+
+long VoiceFile::GetOffsetToFolder( int folderIndex )
+{
+	if( !this->ValidFolder( folderIndex ) ) return 0;
+
+	return ( kFileHeaderSz + ( folderIndex * kFolderSize ));
+}
+
+long VoiceFile::GetOffsetToFile( int fileIndex )
+{
+	if( !this->valid || fileIndex < 0 || fileIndex >= kFolderNItems  ) return 0;
+
+	return kFolderHeaderSz + (fileIndex * kFolderItemSz);
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+int VoiceFile::GetFolderCount( void )
+{
+	return kNumFolders;
+}
+
+
+int VoiceFile::GetFileCountForFolder( int folderIndex )
+{
+	if( !this->ValidFolder( folderIndex )) return 0;
+
+	long offs = this->GetOffsetToFolder( folderIndex );
+
+	int count = 0;
+
+	offs += kFolderHeaderSz;
+
+	// check for items until we find a null item
+	for( count = 0 ; (count < kFolderNItems) && (this->buffer[offs] != '\0') ; count++, offs+= kFolderItemSz);
+
+	return count;
+}
+
 
 
 std::string VoiceFile::GetFolderName( int folderIndex )
 {
-	return "FolderX";
+	if( !this->ValidFolder( folderIndex )) return "";
+
+	long folderOffset = this->GetOffsetToFolder( folderIndex );
+	
+	char * folderName = (char * ) (this->buffer + folderOffset  + 4);
+
+	return folderName;
 }
 
 std::string VoiceFile::GetPathForFolder( int folderIndex )
 {
-	return "FOO/";
+	if( !this->ValidFolder( folderIndex )) return "";
+
+	std::string folderPath( this->vrVoiceDir );
+	folderPath.append( this->GetFolderName( folderIndex ));
+	folderPath.append( "/" );
+
+	return folderPath;
+}
+
+
+
+bool VoiceFile::ValidFile( int fileIndex, int folderIndex )
+{
+	if( !this->ValidFolder( folderIndex ) ) return false;
+	if( fileIndex < 0 ) return false;
+	if( fileIndex >= this->GetFileCountForFolder( folderIndex )) return false;
+	return true;
 }
 
 
 std::string VoiceFile::GetFileInFolder( int fileIndex, int folderIndex )
 {
-	return "FileX";
+	if( !this->valid || !this->ValidFile( fileIndex, folderIndex )) return "";
+
+	// get the offset to the item
+	long offs = this->GetOffsetToFolder( folderIndex );
+	offs += this->GetOffsetToFile( fileIndex );
+	
+	sFldItm *fi = (sFldItm *)&this->buffer[ offs ];
+	char fn[9];
+
+
+	for( int i=0 ; i<8 ; i++ ) {
+		fn[i] = fi->file[i];
+	}
+	fn[8] = '\0';
+
+	std::string filename( fn );
+	filename.append( ".MP3" );
+
+	return filename;
 }
 
-std::string VoiceFile::PrintableDateForFileInFolder( int fileIndex, int folderindex )
+
+std::string VoiceFile::PrintableDateForFileInFolder( int fileIndex, int folderIndex )
 {
-	return "date/time";
+	if( !this->valid || !this->ValidFile( fileIndex, folderIndex )) return "";
+
+	long offs = this->GetOffsetToFolder( folderIndex );
+	offs += this->GetOffsetToFile( fileIndex );
+
+	sFldItm *fi = (sFldItm *)&this->buffer[ offs ];
+
+	char b[128];
+
+	snprintf( b, 127, "%d-%02d-%02d  %02d:%02d:%02d",
+		fi->Year + 1980, fi->Month, fi->Day,
+		fi->Hour, fi->Minute, fi->Second );
+
+	return b;
+}
+
+std::string VoiceFile::SortableDateForFileInFolder( int fileIndex, int folderIndex )
+{
+	if( !this->valid || !this->ValidFile( fileIndex, folderIndex )) return "";
+
+	long offs = this->GetOffsetToFolder( folderIndex );
+	offs += this->GetOffsetToFile( fileIndex );
+
+	sFldItm *fi = (sFldItm *)&this->buffer[ offs ];
+
+	char b[128];
+
+	snprintf( b, 127, "%d_%02d_%02d_%02d%02d%02d",
+		fi->Year + 1980, fi->Month, fi->Day,
+		fi->Hour, fi->Minute, fi->Second );
+
+	return b;
 }

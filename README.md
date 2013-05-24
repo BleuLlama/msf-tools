@@ -13,9 +13,30 @@ that they were recoreded.
 
 It is far from complete.
 
-I eventually hope to include a simple syncing program, providing
-the functionality available through Sony's windows app.
+Included here are a class (VoiceFile) which interfaces with the MSF file.
+The source for this file has information about the discovered file structure.
+
+Set the environment variable "VOICERECORDER" to point to the drive/mountpoint of the recorder.
+
+Also here are two targets that will get built when you type 'make':
+
+msf-dump
+	Will load in the MSF file, and dump out a listing of its contents to stdout.
+	It uses functions in VoiceFile to accomplish this.
+	It is meant more as a demo of the API than anything.
+
+msf-autosave <target directory>
+	Will read in the MSF file, and copy the contents out of the recorder, 
+	and save them into the target directory, sorted by folder name, 
+	with filenames based on the recording date and time.
+
 
 Note: I am not affiliated with Sony in any way.
 
 - Scott Lawrence, 2013
+
+---
+
+@@ Version History
+
+- 1.0 2013-May-23 - Initial release

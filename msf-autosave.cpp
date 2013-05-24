@@ -40,6 +40,9 @@ void usage( char * av0 )
 	std::cout << "      export VOICERECORDER=/Volumes/IC_RECORDER" << std::endl;
 	std::cout << "      export VOICERECORDER=/v/" << std::endl;
 	std::cout << "      export VOICERECORDER=v:\\" << std::endl;
+
+	std::cout << std::endl;
+	std::cout << "Version 1.0  yorgle@gmail.com  Scott Lawrence" << std::endl;
 }
 
 int main( int argc, char ** argv )
@@ -119,7 +122,6 @@ int main( int argc, char ** argv )
 			}
 		}
 	}
-
 
 	return 0;
 }

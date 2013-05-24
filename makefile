@@ -44,3 +44,6 @@ clean:
 
 testd: $(TARGD)
 	./$(TARGD) /Volumes/IC_RECORDER/Voice/
+
+testa: $(TARGA)
+	./$(TARGA) saved

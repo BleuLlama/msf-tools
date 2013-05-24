@@ -1,7 +1,27 @@
 /* Sony voice recorder MSF reader
    using reverse-engineered structure
 
-   Scott Lawrence 2013
+The MIT License (MIT)
+
+Copyright (c) 2013 Scott Lawrence
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
 */
 /*
 #include <iostream>
@@ -29,6 +49,21 @@ DiskUtils::~DiskUtils( void )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+void DiskUtils::MakeDir( std::string _path )
+{
+	// if it's already there, we're done
+	if( DiskUtils::IsValidDir( _path )) return;
+
+	// okay. try to create it
+#if defined (_WIN32) || defined( __MINGW32__ )
+	_mkdir( _path.c_str() );
+#else
+	mkdir( _path.c_str(), 0755 );
+#endif
+
+	
+}
 
 bool DiskUtils::IsValidDir( std::string _path )
 {
@@ -155,13 +190,13 @@ std::string DiskUtils::LFNFrom83( std::string _path, std::string eightthree )
 
 
 #define kCopyFileBufSize	((4096) * 64 )
-void DiskUtils::CopyFile( std::string fromPath, std::string toPath, bool skipIfExists )
+bool DiskUtils::CopyFile( std::string fromPath, std::string toPath, bool skipIfExists )
 {
 	char buf[ kCopyFileBufSize ];
 
 	// if the file is already there, and it's okay to skip, we're done
 	if( skipIfExists ) {
-		if( DiskUtils::IsSimilarFile( fromPath, toPath )) return;
+		if( DiskUtils::IsSimilarFile( fromPath, toPath )) return true;
 	}
 	
 	// copy the file from fromPath to toPath. ;)
@@ -170,14 +205,14 @@ void DiskUtils::CopyFile( std::string fromPath, std::string toPath, bool skipIfE
 	FILE * inf = fopen( fromPath.c_str(), "rb" );
 	if( !inf ) {
 		std::cerr << "Couldn't open input file " << fromPath << std::endl;
-		return;
+		return true;
 	}
 
 	FILE * outf = fopen( toPath.c_str(), "wb" );
 	if( !outf ) {
 		std::cerr << "Couldn't open output file " << toPath << std::endl;
 		fclose( inf );
-		return;
+		return true;
 	}
 
 
@@ -191,4 +226,6 @@ void DiskUtils::CopyFile( std::string fromPath, std::string toPath, bool skipIfE
 	// close the files
 	fclose( inf );
 	fclose( outf );
+
+	return false;
 }
